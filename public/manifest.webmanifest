@@ -1,0 +1,11 @@
+{
+  "name": "Aprova Segurança",
+  "short_name": "Aprova AS",
+  "description": "Prepare-se para conquistar sua vaga na segurança pública.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7fa",
+  "theme_color": "#101d35",
+  "icons": [{ "src": "/shield.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
