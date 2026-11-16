@@ -123,8 +123,14 @@ export default function App() {
       setMessage('Não foi possível enviar sua resposta: ' + error.message)
       return
     }
-    setAnswerResult(data as AnswerResult)
-  }
+    const result = Array.isArray(data) ? data[0] : data
+
+if (!result || typeof result.is_correct !== 'boolean') {
+  setMessage('Não foi possível interpretar o gabarito recebido.')
+  return
+}
+
+setAnswerResult(result as AnswerResult)
 
   useEffect(() => {
     if (tab === 'questions') loadQuestions()
