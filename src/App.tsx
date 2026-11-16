@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Shield, BookOpen, Crown, LogOut, Copy, Clock3, XCircle, RefreshCw, LockKeyhole, Smartphone } from 'lucide-react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import {
+  CheckCircle2, Shield, BookOpen, Crown, LogOut, Copy, Clock3,
+  XCircle, RefreshCw, LockKeyhole, Smartphone, ArrowLeft
+} from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { isConfigured, supabase, type Profile, type PremiumRequest } from './supabase'
 
@@ -8,8 +11,29 @@ const pixKey = import.meta.env.VITE_PIX_CHAVE_EXIBICAO as string | undefined
 const pixHolder = import.meta.env.VITE_PIX_TITULAR as string | undefined
 const amount = Number(import.meta.env.VITE_PIX_VALOR || 1.99)
 
+type Question = {
+  id: string
+  career: string | null
+  subject: string
+  statement: string
+  options: Record<string, string>
+  exam_board: string | null
+  exam_year: number | null
+  source: string | null
+  source_url: string | null
+}
+
+type AnswerResult = {
+  is_correct: boolean
+  correct_option: string
+  explanation: string | null
+}
+
 function money(cents: number) {
-  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  return (cents / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  })
 }
 
 export default function App() {
@@ -17,13 +41,19 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [authMode, setAuthMode] = useState<'login'|'signup'>('signup')
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [reference, setReference] = useState('')
   const [requests, setRequests] = useState<PremiumRequest[]>([])
-  const [tab, setTab] = useState<'home'|'premium'|'admin'>('home')
+  const [tab, setTab] = useState<'home' | 'premium' | 'admin' | 'questions'>('home')
   const [requestSent, setRequestSent] = useState(false)
+
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [questionIndex, setQuestionIndex] = useState(0)
+  const [selectedOption, setSelectedOption] = useState('')
+  const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null)
+  const [questionsLoading, setQuestionsLoading] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -33,42 +63,96 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!supabase || !session?.user) { setProfile(null); return }
+    if (!supabase || !session?.user) {
+      setProfile(null)
+      return
+    }
     loadProfile()
   }, [session?.user?.id])
 
   async function loadProfile() {
     if (!supabase || !session?.user) return
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
-    if (error) { setMessage('Não foi possível carregar seu perfil: ' + error.message); return }
+    const { data, error } = await supabase
+      .from('profiles').select('*').eq('id', session.user.id).single()
+    if (error) {
+      setMessage('Não foi possível carregar seu perfil: ' + error.message)
+      return
+    }
     setProfile(data as Profile)
   }
 
   async function loadRequests() {
     if (!supabase || !profile?.is_admin) return
-    const { data, error } = await supabase.from('premium_requests').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('premium_requests').select('*')
+      .order('created_at', { ascending: false })
     if (error) setMessage('Erro ao carregar solicitações: ' + error.message)
     else setRequests((data || []) as PremiumRequest[])
   }
 
-  useEffect(() => { if (profile?.is_admin && tab === 'admin') loadRequests() }, [profile?.is_admin, tab])
+  async function loadQuestions() {
+    if (!supabase) return
+    setQuestionsLoading(true)
+    setMessage('')
+    const { data, error } = await supabase
+      .from('questions').select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
 
-  async function authenticate(e: React.FormEvent) {
+    if (error) setMessage('Erro ao carregar questões: ' + error.message)
+    else {
+      setQuestions((data || []) as Question[])
+      setQuestionIndex(0)
+      setSelectedOption('')
+      setAnswerResult(null)
+    }
+    setQuestionsLoading(false)
+  }
+
+  async function submitAnswer() {
+    if (!supabase || !currentQuestion || !selectedOption || answerResult) return
+    setLoading(true)
+    setMessage('')
+    const { data, error } = await supabase.rpc('submit_question_answer', {
+      p_question_id: currentQuestion.id,
+      p_selected_option: selectedOption
+    })
+    setLoading(false)
+
+    if (error) {
+      setMessage('Não foi possível enviar sua resposta: ' + error.message)
+      return
+    }
+    setAnswerResult(data as AnswerResult)
+  }
+
+  useEffect(() => {
+    if (tab === 'questions') loadQuestions()
+  }, [tab])
+
+  useEffect(() => {
+    if (profile?.is_admin && tab === 'admin') loadRequests()
+  }, [profile?.is_admin, tab])
+
+  async function authenticate(e: FormEvent) {
     e.preventDefault()
     if (!supabase) return
-    setLoading(true); setMessage('')
+    setLoading(true)
+    setMessage('')
     const result = authMode === 'signup'
       ? await supabase.auth.signUp({ email, password })
       : await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (result.error) setMessage(result.error.message)
-    else if (authMode === 'signup' && !result.data.session) setMessage('Cadastro iniciado. Confira seu e-mail para confirmar a conta e depois entre no aplicativo.')
+    else if (authMode === 'signup' && !result.data.session)
+      setMessage('Cadastro iniciado. Confira seu e-mail para confirmar a conta e depois entre no aplicativo.')
     else setMessage('Acesso realizado.')
   }
 
   async function requestPremium() {
     if (!supabase || !session?.user) return
-    setLoading(true); setMessage('')
+    setLoading(true)
+    setMessage('')
     const { error } = await supabase.from('premium_requests').insert({
       user_id: session.user.id,
       email: session.user.email,
@@ -77,117 +161,340 @@ export default function App() {
     })
     setLoading(false)
     if (error) setMessage('Não foi possível enviar a solicitação: ' + error.message)
-    else { setRequestSent(true); setMessage('Solicitação enviada. Aguarde a conferência e liberação do administrador.') }
+    else {
+      setRequestSent(true)
+      setMessage('Solicitação enviada. Aguarde a conferência e liberação do administrador.')
+    }
   }
 
   async function reviewRequest(id: string, approve: boolean) {
     if (!supabase) return
-    setLoading(true); setMessage('')
-    const { error } = await supabase.rpc(approve ? 'approve_premium_request' : 'reject_premium_request', { request_id: id })
+    setLoading(true)
+    setMessage('')
+    const { error } = await supabase.rpc(
+      approve ? 'approve_premium_request' : 'reject_premium_request',
+      { request_id: id }
+    )
     setLoading(false)
     if (error) setMessage('Não foi possível concluir: ' + error.message)
-    else { setMessage(approve ? 'Premium liberado por 30 dias.' : 'Solicitação recusada.'); await loadRequests(); await loadProfile() }
+    else {
+      setMessage(approve ? 'Premium liberado por 30 dias.' : 'Solicitação recusada.')
+      await loadRequests()
+      await loadProfile()
+    }
   }
 
   async function signOut() {
     if (supabase) await supabase.auth.signOut()
-    setSession(null); setProfile(null); setTab('home')
+    setSession(null)
+    setProfile(null)
+    setTab('home')
   }
 
-  const isPremium = Boolean(profile?.premium_until && new Date(profile.premium_until).getTime() > Date.now())
-  const pendingCount = useMemo(() => requests.filter(r => r.status === 'pending').length, [requests])
-
-  if (!isConfigured) return <SetupScreen />
-
-  if (!session) return (
-    <main className="auth-wrap">
-      <div className="brand"><div className="brand-mark"><Shield size={28}/><b>AS</b></div><div><strong>APROVA</strong><span>SEGURANÇA</span></div></div>
-      <section className="panel auth-panel">
-        <p className="eyebrow">SUA PREPARAÇÃO COMEÇA AQUI</p>
-        <h1>{authMode === 'signup' ? 'Crie sua conta' : 'Bem-vindo de volta'}</h1>
-        <p className="muted">Acesse questões, simulados e seu progresso.</p>
-        <form onSubmit={authenticate} className="stack">
-          <label>E-mail<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com"/></label>
-          <label>Senha<input type="password" required minLength={6} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo de 6 caracteres"/></label>
-          <button className="primary" disabled={loading}>{loading ? 'Aguarde...' : authMode === 'signup' ? 'Criar conta' : 'Entrar'}</button>
-        </form>
-        <button className="link-button" onClick={()=>setAuthMode(authMode === 'signup' ? 'login' : 'signup')}>
-          {authMode === 'signup' ? 'Já tenho conta. Entrar' : 'Ainda não tenho conta. Criar cadastro'}
-        </button>
-        {message && <p className="notice">{message}</p>}
-      </section>
-      <p className="footer-note">Preparação para todas as carreiras de segurança pública.</p>
-    </main>
+  const currentQuestion = questions[questionIndex]
+  const isPremium = Boolean(
+    profile?.premium_until &&
+    new Date(profile.premium_until).getTime() > Date.now()
   )
+  const pendingCount = useMemo(
+    () => requests.filter(r => r.status === 'pending').length,
+    [requests]
+  )  
+    if (!isConfigured || !supabase) {
+    return (
+      <main className="app">
+        <section className="panel">
+          <Shield size={42} />
+          <h1>Aprova Segurança</h1>
+          <p>O aplicativo precisa ser configurado com o Supabase.</p>
+        </section>
+      </main>
+    )
+  }
+
+  if (!session) {
+    return (
+      <main className="app">
+        <section className="panel auth-panel">
+          <Shield size={44} />
+          <h1>Aprova Segurança</h1>
+          <p>Prepare-se para conquistar sua vaga na segurança pública.</p>
+          <form onSubmit={authenticate}>
+            <label>E-mail</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Seu e-mail"
+              required
+            />
+            <label>Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Sua senha"
+              required
+              minLength={6}
+            />
+            <button className="primary" disabled={loading}>
+              {loading ? 'Aguarde...' : authMode === 'signup' ? 'Criar conta' : 'Entrar'}
+            </button>
+          </form>
+          <button className="link-button" onClick={() => {
+            setAuthMode(authMode === 'signup' ? 'login' : 'signup')
+            setMessage('')
+          }}>
+            {authMode === 'signup' ? 'Já tenho uma conta. Entrar' : 'Não tenho conta. Criar cadastro'}
+          </button>
+          {message && <p className="notice">{message}</p>}
+        </section>
+      </main>
+    )
+  }
 
   return (
-    <div className="app-shell">
+    <main className="app">
       <header className="topbar">
-        <div className="brand compact"><div className="brand-mark"><Shield size={22}/><b>AS</b></div><div><strong>APROVA</strong><span>SEGURANÇA</span></div></div>
-        <button className="icon-button" onClick={signOut} title="Sair"><LogOut size={19}/></button>
+        <div className="brand">
+          <Shield size={28} />
+          <div>
+            <strong>Aprova Segurança</strong>
+            <small>Seu futuro começa aqui</small>
+          </div>
+        </div>
+        <button className="icon-button" onClick={signOut} title="Sair">
+          <LogOut size={20} />
+        </button>
       </header>
-      <nav className="tabs">
-        <button className={tab==='home'?'active':''} onClick={()=>setTab('home')}><BookOpen size={16}/> Início</button>
-        <button className={tab==='premium'?'active':''} onClick={()=>setTab('premium')}><Crown size={16}/> Premium</button>
-        {profile?.is_admin && <button className={tab==='admin'?'active':''} onClick={()=>setTab('admin')}><LockKeyhole size={16}/> Administração {pendingCount>0 && <i>{pendingCount}</i>}</button>}
-      </nav>
-      <main className="content">
-        {tab==='home' && <>
-          <p className="eyebrow">ÁREA DO CANDIDATO</p>
-          <h1>Olá, concurseiro!</h1>
-          <p className="muted">Sua preparação para a segurança pública começa com uma questão de cada vez.</p>
-          <div className="hero-card">
-            <div><span className="eyebrow gold">APROVA SEGURANÇA</span><h2>Seu próximo objetivo começa aqui.</h2><p>Organize seus estudos e acompanhe sua evolução.</p></div>
-            <Shield size={54} className="hero-shield"/>
-          </div>
-          <div className="feature-grid">
-            <div className="feature"><BookOpen/><b>Banco de questões</b><small>Em desenvolvimento</small></div>
-            <div className="feature"><RefreshCw/><b>Simulados</b><small>Em desenvolvimento</small></div>
-          </div>
-          <div className="status-card"><span>{isPremium ? 'Premium ativo' : 'Plano gratuito'}</span><b className={isPremium?'green':''}>{isPremium ? `Até ${new Date(profile!.premium_until!).toLocaleDateString('pt-BR')}` : 'Acesso básico'}</b><button className="secondary" onClick={()=>setTab('premium')}>{isPremium?'Ver assinatura':'Conhecer Premium'}</button></div>
-        </>}
-        {tab==='premium' && <section className="panel">
-          <p className="eyebrow">ACESSO EXCLUSIVO</p><h1>Desbloqueie o Premium</h1>
-          <div className="price"><strong>{money(Math.round(amount*100))}</strong><span>/ 30 dias</span></div>
-          <p className="muted">Faça o PIX e solicite a liberação. O acesso só será ativado depois que o administrador conferir o recebimento.</p>
-          {isPremium ? <div className="success-box"><CheckCircle2/> Seu Premium está ativo até {new Date(profile!.premium_until!).toLocaleDateString('pt-BR')}.</div> : <>
-            {pixPayload ? <div className="pix-box">
-              <h3>Pagamento via PIX</h3>
-              <QRCodeCanvas value={pixPayload} size={210} level="M" includeMargin/>
-              <p className="muted small">Escaneie o QR Code no aplicativo do seu banco.</p>
-              <button className="secondary" onClick={()=>navigator.clipboard.writeText(pixPayload)}><Copy size={16}/> Copiar PIX copia e cola</button>
-              {pixKey && <p className="small">Chave PIX: <b>{pixKey}</b></p>}
-              {pixHolder && <p className="small">Titular: {pixHolder}</p>}
-            </div> : <div className="warning-box">O QR Code ainda precisa ser configurado com o código PIX copia e cola válido, fornecido pelo banco. Não use uma chave PIX isolada como QR de pagamento.</div>}
-            <label>Identificador da transação (opcional)<input value={reference} onChange={e=>setReference(e.target.value)} placeholder="Ex.: E123... ou código do comprovante"/></label>
-            <p className="small muted">Enviar esta solicitação não confirma o pagamento. Não informe senha, token ou dados bancários.</p>
-            <button className="primary" onClick={requestPremium} disabled={loading || requestSent}>{loading?'Enviando...':requestSent?'Solicitação enviada':'Já paguei — solicitar liberação'}</button>
-            {requestSent && <div className="success-box"><Clock3/> Solicitação pendente de conferência pelo administrador.</div>}
-          </>}
-          {message && <p className="notice">{message}</p>}
-        </section>}
-        {tab==='admin' && profile?.is_admin && <section>
-          <p className="eyebrow">CONTROLE DO PROPRIETÁRIO</p><h1>Solicitações Premium</h1>
-          <div className="admin-summary"><strong>{pendingCount}</strong><span>aguardando análise</span><button className="icon-button" onClick={loadRequests}><RefreshCw size={17}/></button></div>
-          {requests.length===0 ? <div className="panel muted">Nenhuma solicitação encontrada.</div> : <div className="request-list">
-            {requests.map(r=><article className="panel request" key={r.id}>
-              <div className="request-head"><b>{r.email}</b><span className={`pill ${r.status}`}>{r.status==='pending'?'Pendente':r.status==='approved'?'Aprovado':'Recusado'}</span></div>
-              <p className="muted small">{new Date(r.created_at).toLocaleString('pt-BR')}</p>
-              <strong>{money(r.amount_cents)}</strong>
-              {r.transaction_reference && <p className="small">Referência: {r.transaction_reference}</p>}
-              {r.status==='pending' && <div className="button-row"><button className="approve" disabled={loading} onClick={()=>reviewRequest(r.id,true)}><CheckCircle2 size={16}/> Liberar 30 dias</button><button className="reject" disabled={loading} onClick={()=>reviewRequest(r.id,false)}><XCircle size={16}/> Recusar</button></div>}
-              {r.status==='approved' && <p className="small green">Aprovado em {r.reviewed_at ? new Date(r.reviewed_at).toLocaleString('pt-BR') : '—'}</p>}
-            </article>)}
-          </div>}
-          {message && <p className="notice">{message}</p>}
-          <p className="small muted">Antes de liberar, confira o crédito diretamente no extrato bancário. A aprovação concede 30 dias a partir do fim de eventual período Premium ainda ativo.</p>
-        </section>}
-      </main>
-      <footer className="app-footer">APROVA SEGURANÇA • ESTUDE COM ESTRATÉGIA</footer>
-    </div>
-  )
-}
 
-function SetupScreen() {
-  return <main className="auth-wrap"><div className="brand"><div className="brand-mark"><Shield/><b>AS</b></div><div><strong>APROVA</strong><span>SEGURANÇA</span></div></div><section className="panel"><h1>Configuração necessária</h1><p>O projeto está preparado, mas ainda precisa ser conectado ao Supabase. Siga o README incluído no pacote para configurar as variáveis e executar o banco de dados.</p><div className="warning-box"><Smartphone/> Esta versão ainda não está publicada e não pode ser compartilhada por link até ser configurada e hospedada.</div></section></main>
+      <section className="welcome">
+        <p>Olá, candidato!</p>
+        <h1>Vamos estudar hoje?</h1>
+        <span>{session.user.email}</span>
+      </section>
+
+      <nav className="tabs">
+        <button className={tab === 'home' ? 'active' : ''} onClick={() => setTab('home')}>
+          Início
+        </button>
+        <button className={tab === 'questions' ? 'active' : ''} onClick={() => setTab('questions')}>
+          Questões
+        </button>
+        <button className={tab === 'premium' ? 'active' : ''} onClick={() => setTab('premium')}>
+          Premium
+        </button>
+        {profile?.is_admin && (
+          <button className={tab === 'admin' ? 'active' : ''} onClick={() => setTab('admin')}>
+            Administração
+          </button>
+        )}
+      </nav>
+
+      {message && <div className="notice">{message}</div>}
+
+      {tab === 'home' && (
+        <section className="content">
+          <h2>Área de estudos</h2>
+          <div className="feature-grid">
+            <button className="feature" onClick={() => setTab('questions')}>
+              <BookOpen size={30} />
+              <strong>Banco de questões</strong>
+              <span>Resolva questões e confira sua correção.</span>
+            </button>
+            <button className="feature" onClick={() => setMessage('Os simulados serão disponibilizados em breve.')}>
+              <CheckCircle2 size={30} />
+              <strong>Simulados</strong>
+              <span>Treine para sua prova.</span>
+            </button>
+            <button className="feature" onClick={() => setTab('premium')}>
+              <Crown size={30} />
+              <strong>Plano Premium</strong>
+              <span>Conheça os recursos Premium.</span>
+            </button>
+          </div>
+          <div className="panel">
+            <h3>Seu acesso</h3>
+            <p>{isPremium ? 'Premium ativo' : 'Plano gratuito'}</p>
+            {profile?.premium_until && (
+              <small>Validade: {new Date(profile.premium_until).toLocaleDateString('pt-BR')}</small>
+            )}
+          </div>
+        </section>
+      )}
+
+      {tab === 'questions' && (
+        <section className="content">
+          <button className="link-button" onClick={() => setTab('home')}>
+            <ArrowLeft size={16} /> Voltar ao início
+          </button>
+          <div className="section-heading">
+            <BookOpen size={28} />
+            <div>
+              <h2>Banco de questões</h2>
+              <p>Pratique e acompanhe sua evolução.</p>
+            </div>
+          </div>
+
+          {questionsLoading && <p>Carregando questões...</p>}
+
+          {!questionsLoading && questions.length === 0 && (
+            <div className="panel">
+              <BookOpen size={34} />
+              <h3>Nenhuma questão disponível ainda</h3>
+              <p>As questões aparecerão aqui assim que forem cadastradas no banco de dados.</p>
+              <button className="secondary" onClick={loadQuestions}>
+                <RefreshCw size={16} /> Atualizar
+              </button>
+            </div>
+          )}
+
+          {!questionsLoading && currentQuestion && (
+            <div className="panel question-panel">
+              <div className="question-meta">
+                <span>{currentQuestion.subject}</span>
+                {currentQuestion.career && <span>{currentQuestion.career}</span>}
+                {currentQuestion.exam_board && <span>{currentQuestion.exam_board}</span>}
+                {currentQuestion.exam_year && <span>{currentQuestion.exam_year}</span>}
+              </div>
+              <p className="question-counter">
+                Questão {questionIndex + 1} de {questions.length}
+              </p>
+              <h3>{currentQuestion.statement}</h3>
+
+              <div className="options">
+                {Object.entries(currentQuestion.options || {}).map(([letter, option]) => (
+                  <button
+                    key={letter}
+                    className={[
+                      'option',
+                      selectedOption === letter ? 'selected' : '',
+                      answerResult && letter === answerResult.correct_option ? 'correct' : '',
+                      answerResult && selectedOption === letter && !answerResult.is_correct ? 'incorrect' : ''
+                    ].join(' ')}
+                    disabled={Boolean(answerResult)}
+                    onClick={() => setSelectedOption(letter)}
+                  >
+                    <strong>{letter})</strong> {option}
+                  </button>
+                ))}
+              </div>
+
+              {!answerResult ? (
+                <button
+                  className="primary"
+                  disabled={!selectedOption || loading}
+                  onClick={submitAnswer}
+                >
+                  {loading ? 'Enviando...' : 'Responder questão'}
+                </button>
+              ) : (
+                <div className="correction">
+                  <h3>
+                    {answerResult.is_correct ? 'Resposta correta!' : 'Resposta incorreta'}
+                  </h3>
+                  <p>Gabarito: {answerResult.correct_option}</p>
+                  {answerResult.explanation && <p>{answerResult.explanation}</p>}
+                </div>
+              )}
+
+              {currentQuestion.source && (
+                <p className="source">Fonte: {currentQuestion.source}</p>
+              )}
+              {currentQuestion.source_url && (
+                <a href={currentQuestion.source_url} target="_blank" rel="noreferrer">
+                  Consultar fonte original
+                </a>
+              )}
+
+              {answerResult && (
+                <button className="secondary" onClick={() => {
+                  setQuestionIndex((questionIndex + 1) % questions.length)
+                  setSelectedOption('')
+                  setAnswerResult(null)
+                }}>
+                  Próxima questão
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+      {tab === 'premium' && (
+        <section className="content">
+          <div className="panel">
+            <h2>Desbloqueie o Premium</h2>
+            <div className="price">
+              <strong>{money(Math.round(amount * 100))}</strong>
+              <span> / 30 dias</span>
+            </div>
+            <p>Faça o PIX e solicite a liberação. O acesso será ativado após a conferência do pagamento.</p>
+
+            {isPremium ? (
+              <p>Seu Premium está ativo até {new Date(profile!.premium_until!).toLocaleDateString('pt-BR')}.</p>
+            ) : (
+              <>
+                {pixPayload ? (
+                  <div className="pix-box">
+                    <h3>Pagamento via PIX</h3>
+                    <QRCodeCanvas value={pixPayload} size={210} level="M" includeMargin />
+                    <button className="secondary" onClick={() => navigator.clipboard.writeText(pixPayload)}>
+                      <Copy size={16} /> Copiar PIX copia e cola
+                    </button>
+                    {pixKey && <p>Chave PIX: <strong>{pixKey}</strong></p>}
+                    {pixHolder && <p>Titular: {pixHolder}</p>}
+                  </div>
+                ) : (
+                  <p className="notice">O PIX ainda precisa ser configurado.</p>
+                )}
+
+                <label>
+                  Identificador da transação (opcional)
+                  <input value={reference} onChange={e => setReference(e.target.value)} placeholder="Código da transação" />
+                </label>
+                <p className="small">A solicitação não confirma o pagamento. O administrador fará a conferência.</p>
+                <button className="primary" onClick={requestPremium} disabled={loading || requestSent}>
+                  {loading ? 'Enviando...' : requestSent ? 'Solicitação enviada' : 'Já paguei — solicitar liberação'}
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      {tab === 'admin' && profile?.is_admin && (
+        <section className="content">
+          <h2>Solicitações Premium</h2>
+          <p>{pendingCount} aguardando análise</p>
+          <button className="secondary" onClick={loadRequests}>
+            <RefreshCw size={16} /> Atualizar solicitações
+          </button>
+
+          {requests.length === 0 ? (
+            <div className="panel">Nenhuma solicitação encontrada.</div>
+          ) : (
+            requests.map(r => (
+              <div className="panel" key={r.id}>
+                <strong>{r.email}</strong>
+                <p>{money(r.amount_cents)}</p>
+                <p>Status: {r.status === 'pending' ? 'Pendente' : r.status === 'approved' ? 'Aprovado' : 'Recusado'}</p>
+                {r.transaction_reference && <p>Referência: {r.transaction_reference}</p>}
+                {r.status === 'pending' && (
+                  <div className="button-row">
+                    <button className="approve" disabled={loading} onClick={() => reviewRequest(r.id, true)}>
+                      <CheckCircle2 size={16} /> Liberar 30 dias
+                    </button>
+                    <button className="reject" disabled={loading} onClick={() => reviewRequest(r.id, false)}>
+                      <XCircle size={16} /> Recusar
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+          <p className="small">Confira o recebimento diretamente no banco antes de liberar o Premium.</p>
+        </section>
+      )}
+    </main>
+  )
 }
