@@ -131,7 +131,8 @@ if (!result || typeof result.is_correct !== 'boolean') {
 }
 
 setAnswerResult(result as AnswerResult)
-
+  }
+  
   useEffect(() => {
     if (tab === 'questions') loadQuestions()
   }, [tab])
