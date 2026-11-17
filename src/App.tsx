@@ -342,7 +342,7 @@ setAnswerResult(result as AnswerResult)
               <strong>Banco de questões</strong>
               <span>Resolva questões e confira sua correção.</span>
             </button>
-            <button className="feature" onClick={() => setMessage('Os simulados serão disponibilizados em breve.')}>
+            <button className="feature" onClick={() => setTab('simulado')}>
               <CheckCircle2 size={30} />
               <strong>Simulados</strong>
               <span>Treine para sua prova.</span>
