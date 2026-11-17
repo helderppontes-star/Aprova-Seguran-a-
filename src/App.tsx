@@ -137,8 +137,12 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
 
     if (error) {
       setMessage('Erro ao iniciar simulado: ' + error.message)
-    } else if (!data?.session_id || !data?.questions) {
-      setMessage('Não foi possível carregar as questões do simulado.')
+    } else if (
+  !data?.session_id ||
+  !Array.isArray(data?.questions) ||
+  data.questions.length !== 20
+) {
+  setMessage('Não há 20 questões disponíveis para iniciar o simulado.')
     } else {
       setSimuladoSessionId(data.session_id)
       setSimuladoQuestions(data.questions as SimuladoQuestion[])
