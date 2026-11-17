@@ -32,9 +32,16 @@ jobs:
 
       - name: Compilar aplicativo
         run: npm run build
+        
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_PIX_COPIA_COLA: ${{ secrets.VITE_PIX_COPIA_COLA }}
+          VITE_PIX_CHAVE_EXIBICAO: ${{ secrets.VITE_PIX_CHAVE_EXIBICAO }}
+          VITE_PIX_TITULAR: ${{ secrets.VITE_PIX_TITULAR }}
+          VITE_PIX_VALOR: ${{ secrets.VITE_PIX_VALOR }}
+
+          
 
       - name: Configurar Pages
         uses: actions/configure-pages@v5
