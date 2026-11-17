@@ -187,7 +187,39 @@ if (!result || typeof result.is_correct !== 'boolean') {
 setAnswerResult(result as AnswerResult)
     await loadDailyUsage()
   }
+  async function finishSimulado() {
+    if (!supabase || !simuladoSessionId) return
 
+    if (Object.keys(simuladoAnswers).length !== 20) {
+      setMessage('Responda às 20 questões antes de finalizar.')
+      return
+    }
+
+    setSimuladoLoading(true)
+    setMessage('')
+
+    const { data, error } = await supabase.rpc('finish_daily_simulado', {
+      p_session_id: simuladoSessionId,
+      p_answers: simuladoAnswers
+    })
+
+    setSimuladoLoading(false)
+
+    if (error) {
+      setMessage('Erro ao finalizar simulado: ' + error.message)
+      return
+    }
+
+    const result = Array.isArray(data) ? data[0] : data
+
+    if (!result || !result.questions) {
+      setMessage('Não foi possível carregar o resultado do simulado.')
+      return
+    }
+
+    setSimuladoResult(result.questions as SimuladoQuestion[])
+    setMessage('Simulado finalizado com sucesso!')
+  }
   useEffect(() => {
   if (tab === 'questions') {
     loadQuestions()
