@@ -28,7 +28,12 @@ type AnswerResult = {
   correct_option: string
   explanation: string | null
 }
-
+type SimuladoQuestion = Question & {
+  selected_option?: string | null
+  correct_option?: string
+  explanation?: string | null
+  is_correct?: boolean
+}
 function money(cents: number) {
   return (cents / 100).toLocaleString('pt-BR', {
     style: 'currency',
@@ -57,7 +62,13 @@ export default function App() {
   const [dailyUsed, setDailyUsed] = useState(0)
 const dailyLimit = 20
 const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
-
+  const [simuladoSessionId, setSimuladoSessionId] = useState<string | null>(null)
+  const [simuladoQuestions, setSimuladoQuestions] = useState<SimuladoQuestion[]>([])
+  const [simuladoAnswers, setSimuladoAnswers] = useState<Record<string, string>>({})
+  const [simuladoIndex, setSimuladoIndex] = useState(0)
+  const [simuladoResult, setSimuladoResult] = useState<SimuladoQuestion[] | null>(null)
+  const [simuladoLoading, setSimuladoLoading] = useState(false)
+  const [simuladoSeconds, setSimuladoSeconds] = useState(40 * 60)
   useEffect(() => {
     if (!supabase) return
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
