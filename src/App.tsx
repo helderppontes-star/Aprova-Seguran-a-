@@ -241,9 +241,15 @@ setAnswerResult(result as AnswerResult)
     return (
       <main className="app">
         <section className="panel auth-panel">
-          <div className="brand-mark">
-  <Shield size={72} strokeWidth={1.8} />
-  <b>AS</b>
+        <div className="brand">
+  <div className="brand-mark">
+    <Shield size={96} strokeWidth={1.8} />
+    <b>AS</b>
+  </div>
+  <div>
+    <strong>Aprova Segurança</strong>
+    <span>PREPARAÇÃO E APROVAÇÃO</span>
+  </div>
 </div>
           <h1>Aprova Segurança</h1>
           <p>Prepare-se para conquistar sua vaga na segurança pública.</p>
