@@ -216,13 +216,12 @@ setAnswerResult(result as AnswerResult)
 
     const result = Array.isArray(data) ? data[0] : data
 
-    if (!result || !result.questions) {
-  if (!result || !result.results) {
-  setMessage('Não foi possível carregar o resultado do simulado.')
-  return
-}
+    if (!result || !result.results) {
+      setMessage('Não foi possível carregar o resultado do simulado.')
+      return
+    }
 
-setSimuladoResult(result.results as SimuladoQuestion[])
+    setSimuladoResult(result.results as SimuladoQuestion[])
     setMessage('Simulado finalizado com sucesso!')
   }
   useEffect(() => {
