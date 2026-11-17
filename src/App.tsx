@@ -166,7 +166,7 @@ useEffect(() => {
     } else {
       setSimuladoSessionId(data.session_id)
       setSimuladoQuestions(data.questions as SimuladoQuestion[])
-      setSimuladoTimeLeft(10)
+      setSimuladoTimeLeft(60 * 60)
 
       if (data.questions.length !== 20) {
         setMessage('Atenção: não foi possível carregar as 20 questões previstas.')
