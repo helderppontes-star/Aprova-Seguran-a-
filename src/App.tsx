@@ -85,18 +85,25 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
       
     loadProfile()
   }, [session?.user?.id])
-  useEffect(() => {
-
-    if (!simuladoSessionId || simuladoResult) return
-
-    const timer = window.setInterval(() => {
-      setSimuladoTimeLeft((prev) => Math.max(prev - 1, 0))
-    }, 1000)
-
-    return () => window.clearInterval(timer)
-
-  }, [simuladoSessionId, simuladoResult])
   
+useEffect(() => {
+  if (!simuladoSessionId || simuladoResult) return
+
+  const timer = window.setInterval(() => {
+    setSimuladoTimeLeft((prev) => {
+      if (prev <= 1) {
+        window.clearInterval(timer)
+        void finishSimulado()
+        return 0
+      }
+
+      return prev - 1
+    })
+  }, 1000)
+
+  return () => window.clearInterval(timer)
+}, [simuladoSessionId, simuladoResult])
+
   async function loadProfile() {
     if (!supabase || !session?.user) return
     const { data, error } = await supabase
@@ -206,11 +213,7 @@ setAnswerResult(result as AnswerResult)
   }
   async function finishSimulado() {
     if (!supabase || !simuladoSessionId) return
-
-    if (Object.keys(simuladoAnswers).length !== 20) {
-      setMessage('Responda às 20 questões antes de finalizar.')
-      return
-    }
+    if (simuladoLoading || simuladoResult) return
 
     setSimuladoLoading(true)
     setMessage('')
