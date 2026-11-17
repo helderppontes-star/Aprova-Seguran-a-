@@ -165,7 +165,13 @@ setAnswerResult(result as AnswerResult)
     setLoading(true)
     setMessage('')
     const result = authMode === 'signup'
-      ? await supabase.auth.signUp({ email, password })
+      ? await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: 'https://helderppontes-star.github.io/Aprova-Seguran-a-/'
+    }
+  })
       : await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (result.error) setMessage(result.error.message)
