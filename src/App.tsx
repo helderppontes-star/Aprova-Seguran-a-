@@ -46,7 +46,7 @@ export default function App() {
   const [message, setMessage] = useState('')
   const [reference, setReference] = useState('')
   const [requests, setRequests] = useState<PremiumRequest[]>([])
-  const [tab, setTab] = useState<'home' | 'premium' | 'admin' | 'questions'>('home')
+  const [tab, setTab] = useState<'home' | 'premium' | 'admin' | 'questions' | 'simulado'>('home')
   const [requestSent, setRequestSent] = useState(false)
 
   const [questions, setQuestions] = useState<Question[]>([])
