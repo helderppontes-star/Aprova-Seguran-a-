@@ -54,6 +54,9 @@ export default function App() {
   const [selectedOption, setSelectedOption] = useState('')
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null)
   const [questionsLoading, setQuestionsLoading] = useState(false)
+  const [dailyUsed, setDailyUsed] = useState(0)
+const dailyLimit = 20
+const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
 
   useEffect(() => {
     if (!supabase) return
@@ -108,7 +111,18 @@ export default function App() {
     }
     setQuestionsLoading(false)
   }
+async function loadDailyUsage() {
+  if (!supabase) return
 
+  const { data, error } = await supabase.rpc('get_daily_question_usage')
+
+  if (error) {
+    console.error('Erro ao consultar limite diário:', error.message)
+    return
+  }
+
+  setDailyUsed(Number(data || 0))
+}
   async function submitAnswer() {
     if (!supabase || !currentQuestion || !selectedOption || answerResult) return
     setLoading(true)
@@ -132,10 +146,13 @@ if (!result || typeof result.is_correct !== 'boolean') {
 
 setAnswerResult(result as AnswerResult)
   }
-  
+  await loadDailyUsage()
   useEffect(() => {
-    if (tab === 'questions') loadQuestions()
-  }, [tab])
+  if (tab === 'questions') {
+    loadQuestions()
+    loadDailyUsage()
+  }
+}, [tab, session?.user?.id])
 
   useEffect(() => {
     if (profile?.is_admin && tab === 'admin') loadRequests()
@@ -342,7 +359,22 @@ setAnswerResult(result as AnswerResult)
               <p>Pratique e acompanhe sua evolução.</p>
             </div>
           </div>
-
+<div className="panel">
+  <strong>Questões gratuitas restantes: {dailyRemaining.toString().padStart(2, '0')}/20</strong>
+  <div style={{
+    background: '#35516e',
+    height: '10px',
+    borderRadius: '10px',
+    marginTop: '10px'
+  }}>
+    <div style={{
+      background: '#78e0b6',
+      width: `${(dailyRemaining / 20) * 100}%`,
+      height: '10px',
+      borderRadius: '10px'
+    }} />
+  </div>
+</div>
           {questionsLoading && <p>Carregando questões...</p>}
 
           {!questionsLoading && questions.length === 0 && (
@@ -356,14 +388,17 @@ setAnswerResult(result as AnswerResult)
             </div>
           )}
 
-          {!questionsLoading && currentQuestion && (
-            <div className="panel question-panel">
-              <div className="question-meta">
-                <span>{currentQuestion.subject}</span>
-                {currentQuestion.career && <span>{currentQuestion.career}</span>}
-                {currentQuestion.exam_board && <span>{currentQuestion.exam_board}</span>}
-                {currentQuestion.exam_year && <span>{currentQuestion.exam_year}</span>}
-              </div>
+{!questionsLoading && !isPremium && dailyRemaining === 0 && (
+  <div className="panel">
+    <Crown size={40} />
+    <h2>Você utilizou suas 20 questões gratuitas de hoje!</h2>
+    <p>Continue sua preparação sem limites com o plano Premium.</p>
+    <button className="primary" onClick={() => setTab('premium')}>
+      Conhecer o Premium
+    </button>
+    <p>Suas questões gratuitas serão renovadas à meia-noite.</p>
+  </div>
+)}
               <p className="question-counter">
                 Questão {questionIndex + 1} de {questions.length}
               </p>
