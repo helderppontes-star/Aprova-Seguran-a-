@@ -82,7 +82,11 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
       setProfile(null)
       return
     }
-      useEffect(() => {
+      
+    loadProfile()
+  }, [session?.user?.id])
+  useEffect(() => {
+
     if (!simuladoSessionId || simuladoResult) return
 
     const timer = window.setInterval(() => {
@@ -90,10 +94,9 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
     }, 1000)
 
     return () => window.clearInterval(timer)
-  }, [simuladoSessionId, simuladoResult])
-    loadProfile()
-  }, [session?.user?.id])
 
+  }, [simuladoSessionId, simuladoResult])
+  
   async function loadProfile() {
     if (!supabase || !session?.user) return
     const { data, error } = await supabase
