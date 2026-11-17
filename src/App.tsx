@@ -69,7 +69,7 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
   const [simuladoResult, setSimuladoResult] = useState<SimuladoQuestion[] | null>(null)
   const [simuladoLoading, setSimuladoLoading] = useState(false)
   const [simuladoTimeLeft, setSimuladoTimeLeft] = useState(60 * 60) 
-  const [simuladoSeconds, setSimuladoSeconds] = useState(40 * 60)
+  
   useEffect(() => {
     if (!supabase) return
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
