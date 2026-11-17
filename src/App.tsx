@@ -145,8 +145,9 @@ if (!result || typeof result.is_correct !== 'boolean') {
 }
 
 setAnswerResult(result as AnswerResult)
+    await loadDailyUsage()
   }
-  await loadDailyUsage()
+
   useEffect(() => {
   if (tab === 'questions') {
     loadQuestions()
@@ -347,121 +348,145 @@ setAnswerResult(result as AnswerResult)
         </section>
       )}
 
-      {tab === 'questions' && (
-        <section className="content">
-          <button className="link-button" onClick={() => setTab('home')}>
-            <ArrowLeft size={16} /> Voltar ao início
-          </button>
-          <div className="section-heading">
-            <BookOpen size={28} />
-            <div>
-              <h2>Banco de questões</h2>
-              <p>Pratique e acompanhe sua evolução.</p>
-            </div>
-          </div>
-<div className="panel">
-  <strong>Questões gratuitas restantes: {dailyRemaining.toString().padStart(2, '0')}/20</strong>
-  <div style={{
-    background: '#35516e',
-    height: '10px',
-    borderRadius: '10px',
-    marginTop: '10px'
-  }}>
-    <div style={{
-      background: '#78e0b6',
-      width: `${(dailyRemaining / 20) * 100}%`,
-      height: '10px',
-      borderRadius: '10px'
-    }} />
-  </div>
-</div>
-          {questionsLoading && <p>Carregando questões...</p>}
-
-          {!questionsLoading && questions.length === 0 && (
-            <div className="panel">
-              <BookOpen size={34} />
-              <h3>Nenhuma questão disponível ainda</h3>
-              <p>As questões aparecerão aqui assim que forem cadastradas no banco de dados.</p>
-              <button className="secondary" onClick={loadQuestions}>
-                <RefreshCw size={16} /> Atualizar
-              </button>
-            </div>
-          )}
-
-{!questionsLoading && !isPremium && dailyRemaining === 0 && (
-  <div className="panel">
-    <Crown size={40} />
-    <h2>Você utilizou suas 20 questões gratuitas de hoje!</h2>
-    <p>Continue sua preparação sem limites com o plano Premium.</p>
-    <button className="primary" onClick={() => setTab('premium')}>
-      Conhecer o Premium
+{tab === 'questions' && (
+  <section className="content">
+    <button className="link-button" onClick={() => setTab('home')}>
+      <ArrowLeft size={16} /> Voltar ao início
     </button>
-    <p>Suas questões gratuitas serão renovadas à meia-noite.</p>
-  </div>
-)}
-              <p className="question-counter">
-                Questão {questionIndex + 1} de {questions.length}
-              </p>
-              <h3>{currentQuestion.statement}</h3>
 
-              <div className="options">
-                {Object.entries(currentQuestion.options || {}).map(([letter, option]) => (
-                  <button
-                    key={letter}
-                    className={[
-                      'option',
-                      selectedOption === letter ? 'selected' : '',
-                      answerResult && letter === answerResult.correct_option ? 'correct' : '',
-                      answerResult && selectedOption === letter && !answerResult.is_correct ? 'incorrect' : ''
-                    ].join(' ')}
-                    disabled={Boolean(answerResult)}
-                    onClick={() => setSelectedOption(letter)}
-                  >
-                    <strong>{letter})</strong> {option}
-                  </button>
-                ))}
-              </div>
+    <div className="section-heading">
+      <BookOpen size={28} />
+      <div>
+        <h2>Banco de questões</h2>
+        <p>Pratique e acompanhe sua evolução.</p>
+      </div>
+    </div>
 
-              {!answerResult ? (
-                <button
-                  className="primary"
-                  disabled={!selectedOption || loading}
-                  onClick={submitAnswer}
-                >
-                  {loading ? 'Enviando...' : 'Responder questão'}
-                </button>
-              ) : (
-                <div className="correction">
-                  <h3>
-                    {answerResult.is_correct ? 'Resposta correta!' : 'Resposta incorreta'}
-                  </h3>
-                  <p>Gabarito: {answerResult.correct_option}</p>
-                  {answerResult.explanation && <p>{answerResult.explanation}</p>}
-                </div>
-              )}
+    <div className="panel">
+      <strong>
+        {isPremium || profile?.is_admin
+          ? 'Questões ilimitadas'
+          : `Questões gratuitas restantes: ${dailyRemaining.toString().padStart(2, '0')}/20`}
+      </strong>
 
-              {currentQuestion.source && (
-                <p className="source">Fonte: {currentQuestion.source}</p>
-              )}
-              {currentQuestion.source_url && (
-                <a href={currentQuestion.source_url} target="_blank" rel="noreferrer">
-                  Consultar fonte original
-                </a>
-              )}
-
-              {answerResult && (
-                <button className="secondary" onClick={() => {
-                  setQuestionIndex((questionIndex + 1) % questions.length)
-                  setSelectedOption('')
-                  setAnswerResult(null)
-                }}>
-                  Próxima questão
-                </button>
-              )}
-            </div>
-          )}
-        </section>
+      {!isPremium && !profile?.is_admin && (
+        <div style={{
+          background: '#35516e',
+          height: '10px',
+          borderRadius: '10px',
+          marginTop: '10px'
+        }}>
+          <div style={{
+            background: '#78e0b6',
+            width: `${(dailyRemaining / 20) * 100}%`,
+            height: '10px',
+            borderRadius: '10px'
+          }} />
+        </div>
       )}
+    </div>
+
+    {questionsLoading && <p>Carregando questões...</p>}
+
+    {!questionsLoading && !isPremium && !profile?.is_admin && dailyRemaining === 0 && (
+      <div className="panel">
+        <Crown size={40} />
+        <h2>Você utilizou suas 20 questões gratuitas de hoje!</h2>
+        <p>Continue sua preparação sem limites com o plano Premium.</p>
+        <button className="primary" onClick={() => setTab('premium')}>
+          Conhecer o Premium
+        </button>
+        <p>Suas questões gratuitas serão renovadas à meia-noite.</p>
+      </div>
+    )}
+
+    {!questionsLoading && questions.length === 0 && (
+      <div className="panel">
+        <BookOpen size={34} />
+        <h3>Nenhuma questão disponível ainda</h3>
+        <p>As questões aparecerão aqui assim que forem cadastradas no banco de dados.</p>
+        <button className="secondary" onClick={loadQuestions}>
+          <RefreshCw size={16} /> Atualizar
+        </button>
+      </div>
+    )}
+
+    {!questionsLoading && currentQuestion &&
+      (isPremium || profile?.is_admin || dailyRemaining > 0) && (
+      <div className="panel question-panel">
+        <div className="question-meta">
+          <span>{currentQuestion.subject}</span>
+          {currentQuestion.career && <span>{currentQuestion.career}</span>}
+          {currentQuestion.exam_board && <span>{currentQuestion.exam_board}</span>}
+          {currentQuestion.exam_year && <span>{currentQuestion.exam_year}</span>}
+        </div>
+
+        <p className="question-counter">
+          Questão {questionIndex + 1} de {questions.length}
+        </p>
+
+        <h3>{currentQuestion.statement}</h3>
+
+        <div className="options">
+          {Object.entries(currentQuestion.options || {}).map(([letter, option]) => (
+            <button
+              key={letter}
+              className={[
+                'option',
+                selectedOption === letter ? 'selected' : '',
+                answerResult && letter === answerResult.correct_option ? 'correct' : '',
+                answerResult && selectedOption === letter && !answerResult.is_correct ? 'incorrect' : ''
+              ].join(' ')}
+              disabled={Boolean(answerResult)}
+              onClick={() => setSelectedOption(letter)}
+            >
+              <strong>{letter})</strong> {option}
+            </button>
+          ))}
+        </div>
+
+        {!answerResult ? (
+          <button
+            className="primary"
+            disabled={!selectedOption || loading}
+            onClick={submitAnswer}
+          >
+            {loading ? 'Enviando...' : 'Responder questão'}
+          </button>
+        ) : (
+          <div className="correction">
+            <h3>
+              {answerResult.is_correct ? 'Resposta correta!' : 'Resposta incorreta'}
+            </h3>
+            <p>Gabarito: {answerResult.correct_option}</p>
+            {answerResult.explanation && <p>{answerResult.explanation}</p>}
+          </div>
+        )}
+
+        {currentQuestion.source && (
+          <p className="source">Fonte: {currentQuestion.source}</p>
+        )}
+
+        {currentQuestion.source_url && (
+          <a href={currentQuestion.source_url} target="_blank" rel="noreferrer">
+            Consultar fonte original
+          </a>
+        )}
+
+        {answerResult && (
+          <button className="secondary" onClick={() => {
+            setQuestionIndex((questionIndex + 1) % questions.length)
+            setSelectedOption('')
+            setAnswerResult(null)
+          }}>
+            Próxima questão
+          </button>
+        )}
+      </div>
+    )}
+  </section>
+)}
+ 
       {tab === 'premium' && (
         <section className="content">
           <div className="panel">
