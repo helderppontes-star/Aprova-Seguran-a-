@@ -122,6 +122,35 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
     }
     setQuestionsLoading(false)
   }
+    async function startSimulado() {
+    if (!supabase) return
+
+    setSimuladoLoading(true)
+    setMessage('')
+    setSimuladoResult(null)
+    setSimuladoAnswers({})
+    setSimuladoIndex(0)
+    setSimuladoSessionId(null)
+    setSimuladoQuestions([])
+
+    const { data, error } = await supabase.rpc('start_daily_simulado')
+
+    if (error) {
+      setMessage('Erro ao iniciar simulado: ' + error.message)
+    } else if (!data?.session_id || !data?.questions) {
+      setMessage('Não foi possível carregar as questões do simulado.')
+    } else {
+      setSimuladoSessionId(data.session_id)
+      setSimuladoQuestions(data.questions as SimuladoQuestion[])
+      setSimuladoSeconds(40 * 60)
+
+      if (data.questions.length !== 20) {
+        setMessage('Atenção: não foi possível carregar as 20 questões previstas.')
+      }
+    }
+
+    setSimuladoLoading(false)
+  }
 async function loadDailyUsage() {
   if (!supabase) return
 
