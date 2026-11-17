@@ -68,6 +68,7 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
   const [simuladoIndex, setSimuladoIndex] = useState(0)
   const [simuladoResult, setSimuladoResult] = useState<SimuladoQuestion[] | null>(null)
   const [simuladoLoading, setSimuladoLoading] = useState(false)
+  const [simuladoTimeLeft, setSimuladoTimeLeft] = useState(60 * 60) 
   const [simuladoSeconds, setSimuladoSeconds] = useState(40 * 60)
   useEffect(() => {
     if (!supabase) return
@@ -81,6 +82,15 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
       setProfile(null)
       return
     }
+      useEffect(() => {
+    if (!simuladoSessionId || simuladoResult) return
+
+    const timer = window.setInterval(() => {
+      setSimuladoTimeLeft((prev) => Math.max(prev - 1, 0))
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [simuladoSessionId, simuladoResult])
     loadProfile()
   }, [session?.user?.id])
 
@@ -599,7 +609,20 @@ setAnswerResult(result as AnswerResult)
 
       {simuladoQuestions.length > 0 && !simuladoResult && (
         <>
-          <p>Questão {simuladoIndex + 1} de 20</p>
+        
+          {simuladoSessionId && !simuladoResult && (
+            <div
+              className="correction"
+              style={{ textAlign: 'center', marginBottom: '16px' }}
+            >
+              <p> TEMPO RESTANTE </p>
+              <div style={{ fontSize: '36px', fontWeight: 'bold' }}>
+                {String(Math.floor(simuladoTimeLeft / 60)).padStart(2, '0')}:
+                {String(simuladoTimeLeft % 60).padStart(2, '0')}
+              </div>
+            </div>
+          )}
+  <p>Questão {simuladoIndex + 1} de 20</p>
 
           <h3>{simuladoQuestions[simuladoIndex]?.statement}</h3>
 
