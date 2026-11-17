@@ -68,6 +68,7 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
   const [simuladoIndex, setSimuladoIndex] = useState(0)
   const [simuladoResult, setSimuladoResult] = useState<SimuladoQuestion[] | null>(null)
   const [simuladoLoading, setSimuladoLoading] = useState(false)
+  const [simuladoQuestionCount, setSimuladoQuestionCount] = useState(20)
   const [simuladoTimeLeft, setSimuladoTimeLeft] = useState(60 * 60) 
   
   useEffect(() => {
@@ -142,39 +143,49 @@ useEffect(() => {
     }
     setQuestionsLoading(false)
   }
-    async function startSimulado() {
-    if (!supabase) return
+    
+async function startSimulado() {
+  if (!supabase) return
 
-    setSimuladoLoading(true)
-    setMessage('')
-    setSimuladoResult(null)
-    setSimuladoAnswers({})
-    setSimuladoIndex(0)
-    setSimuladoSessionId(null)
-    setSimuladoQuestions([])
+  const questionCount =
+  profile?.is_admin ||
+  (profile?.premium_until &&
+    new Date(profile.premium_until) > new Date())
+    ? simuladoQuestionCount
+    : 20
 
-    const { data, error } = await supabase.rpc('start_daily_simulado')
+  setSimuladoLoading(true)
+  setMessage('')
+  setSimuladoResult(null)
+  setSimuladoAnswers({})
+  setSimuladoIndex(0)
+  setSimuladoSessionId(null)
+  setSimuladoQuestions([])
 
-    if (error) {
-      setMessage('Erro ao iniciar simulado: ' + error.message)
-    } else if (
-  !data?.session_id ||
-  !Array.isArray(data?.questions) ||
-  data.questions.length !== 20
-) {
-  setMessage('Não há 20 questões disponíveis para iniciar o simulado.')
-    } else {
-      setSimuladoSessionId(data.session_id)
-      setSimuladoQuestions(data.questions as SimuladoQuestion[])
-      setSimuladoTimeLeft(60 * 60)
+  const { data, error } = await supabase.rpc('start_daily_simulado', {
+    p_question_count: questionCount
+  })
 
-      if (data.questions.length !== 20) {
-        setMessage('Atenção: não foi possível carregar as 20 questões previstas.')
-      }
-    }
-
-    setSimuladoLoading(false)
+  if (error) {
+    setMessage('Erro ao iniciar simulado: ' + error.message)
+  } else if (
+    !data?.session_id ||
+    !Array.isArray(data?.questions) ||
+    data.questions.length !== questionCount
+  ) {
+    setMessage(
+      `Não foi possível carregar as ${questionCount} questões previstas.`
+    )
+  } else {
+    setSimuladoSessionId(data.session_id)
+    setSimuladoQuestions(data.questions as SimuladoQuestion[])
+    setSimuladoTimeLeft(questionCount * 3 * 60)
+    setMessage(`Simulado iniciado com ${questionCount} questões!`)
   }
+
+  setSimuladoLoading(false)
+}
+
 async function loadDailyUsage() {
   if (!supabase) return
 
@@ -601,7 +612,29 @@ setAnswerResult(result as AnswerResult)
 
     <div className="panel">
       <h2>Simulados</h2>
-      <p>Teste seus conhecimentos com 20 questões.</p>
+      <p>Escolha a quantidade de questões do seu simulado.</p>
+
+{(profile?.is_admin ||
+  (profile?.premium_until &&
+    new Date(profile.premium_until) > new Date())) && !simuladoSessionId && (
+  <div className="panel">
+    <p>Quantidade de questões Premium:</p>
+
+    <div className="options">
+      {[20, 40, 60].map((amount) => (
+        <button
+          key={amount}
+          className={`option ${
+            simuladoQuestionCount === amount ? 'selected' : ''
+          }`}
+          onClick={() => setSimuladoQuestionCount(amount)}
+        >
+          {amount} questões — {amount * 3} minutos
+        </button>
+      ))}
+    </div>
+  </div>
+)}
 
       {!simuladoSessionId && !simuladoResult && (
         <button
@@ -615,7 +648,6 @@ setAnswerResult(result as AnswerResult)
 
       {simuladoQuestions.length > 0 && !simuladoResult && (
         <>
-        
           {simuladoSessionId && !simuladoResult && (
             <div
               className="correction"
@@ -628,7 +660,7 @@ setAnswerResult(result as AnswerResult)
               </div>
             </div>
           )}
-  <p>Questão {simuladoIndex + 1} de 20</p>
+  <p>Questão {simuladoIndex + 1} de {simuladoQuestions.length}</p>
 
           <h3>{simuladoQuestions[simuladoIndex]?.statement}</h3>
 
@@ -656,6 +688,7 @@ setAnswerResult(result as AnswerResult)
             )}
           </div>
 
+ 
           <div className="button-row">
             <button
               className="secondary"
@@ -667,22 +700,21 @@ setAnswerResult(result as AnswerResult)
 
             <button
               className="secondary"
-              disabled={simuladoIndex === 19}
+              disabled={simuladoIndex === simuladoQuestions.length - 1}
               onClick={() => setSimuladoIndex(i => i + 1)}
             >
               Próxima
             </button>
           </div>
 
-          <p>Respondidas: {Object.keys(simuladoAnswers).length}/20</p>
+          <p>
+            Respondidas: {Object.keys(simuladoAnswers).length}/{simuladoQuestions.length}
+          </p>
 
           <button
             className="primary"
             onClick={finishSimulado}
-            disabled={
-              simuladoLoading ||
-              Object.keys(simuladoAnswers).length !== 20
-            }
+            disabled={simuladoLoading}
           >
             {simuladoLoading ? 'Finalizando...' : 'Finalizar simulado'}
           </button>
@@ -693,7 +725,7 @@ setAnswerResult(result as AnswerResult)
         <div className="correction">
           <h2>Resultado do simulado</h2>
           <p>
-            Acertos: {simuladoResult.filter(q => q.is_correct).length} de 20
+            Acertos: {simuladoResult.filter(q => q.is_correct).length} de {simuladoResult.length}
           </p>
 
           {simuladoResult.map((q, index) => (
