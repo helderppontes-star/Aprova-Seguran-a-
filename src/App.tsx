@@ -241,7 +241,10 @@ setAnswerResult(result as AnswerResult)
     return (
       <main className="app">
         <section className="panel auth-panel">
-          <Shield size={44} />
+          <div className="brand-mark">
+  <Shield size={72} strokeWidth={1.8} />
+  <b>AS</b>
+</div>
           <h1>Aprova Segurança</h1>
           <p>Prepare-se para conquistar sua vaga na segurança pública.</p>
           <form onSubmit={authenticate}>
