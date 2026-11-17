@@ -577,7 +577,110 @@ setAnswerResult(result as AnswerResult)
     )}
   </section>
 )}
- 
+{tab === 'simulado' && (
+  <section className="content">
+    <button className="link-button" onClick={() => setTab('home')}>
+      <ArrowLeft size={16} /> Voltar ao início
+    </button>
+
+    <div className="panel">
+      <h2>Simulados</h2>
+      <p>Teste seus conhecimentos com 20 questões.</p>
+
+      {!simuladoSessionId && !simuladoResult && (
+        <button
+          className="primary"
+          onClick={startSimulado}
+          disabled={simuladoLoading}
+        >
+          {simuladoLoading ? 'Preparando simulado...' : 'Iniciar simulado'}
+        </button>
+      )}
+
+      {simuladoQuestions.length > 0 && !simuladoResult && (
+        <>
+          <p>Questão {simuladoIndex + 1} de 20</p>
+
+          <h3>{simuladoQuestions[simuladoIndex]?.statement}</h3>
+
+          <div className="options">
+            {Object.entries(simuladoQuestions[simuladoIndex]?.options || {}).map(
+              ([letter, option]) => (
+                <button
+                  key={letter}
+                  className={[
+                    'option',
+                    simuladoAnswers[simuladoQuestions[simuladoIndex].id] === letter
+                      ? 'selected'
+                      : ''
+                  ].join(' ')}
+                  onClick={() =>
+                    setSimuladoAnswers(prev => ({
+                      ...prev,
+                      [simuladoQuestions[simuladoIndex].id]: letter
+                    }))
+                  }
+                >
+                  <strong>{letter})</strong> {option}
+                </button>
+              )
+            )}
+          </div>
+
+          <div className="button-row">
+            <button
+              className="secondary"
+              disabled={simuladoIndex === 0}
+              onClick={() => setSimuladoIndex(i => i - 1)}
+            >
+              Anterior
+            </button>
+
+            <button
+              className="secondary"
+              disabled={simuladoIndex === 19}
+              onClick={() => setSimuladoIndex(i => i + 1)}
+            >
+              Próxima
+            </button>
+          </div>
+
+          <p>Respondidas: {Object.keys(simuladoAnswers).length}/20</p>
+
+          <button
+            className="primary"
+            onClick={finishSimulado}
+            disabled={
+              simuladoLoading ||
+              Object.keys(simuladoAnswers).length !== 20
+            }
+          >
+            {simuladoLoading ? 'Finalizando...' : 'Finalizar simulado'}
+          </button>
+        </>
+      )}
+
+      {simuladoResult && (
+        <div className="correction">
+          <h2>Resultado do simulado</h2>
+          <p>
+            Acertos: {simuladoResult.filter(q => q.is_correct).length} de 20
+          </p>
+
+          {simuladoResult.map((q, index) => (
+            <div key={q.id}>
+              <h3>Questão {index + 1}</h3>
+              <p>{q.statement}</p>
+              <p>Sua resposta: {q.selected_option}</p>
+              <p>Gabarito: {q.correct_option}</p>
+              <p>{q.explanation}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+)} 
       {tab === 'premium' && (
         <section className="content">
           <div className="panel">
