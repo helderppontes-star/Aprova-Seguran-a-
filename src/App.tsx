@@ -112,10 +112,13 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
     loadProfile()
   }, [session?.user?.id])
   
-useEffect(() => {
-  if (!supabase || !profile?.is_admin || !session?.user?.id) return
 
-  const channel = supabase
+useEffect(() => {
+  const client = supabase
+
+  if (!client || !profile?.is_admin || !session?.user?.id) return
+
+  const channel = client
     .channel('admin-premium-requests')
     .on(
       'postgres_changes',
@@ -135,9 +138,10 @@ useEffect(() => {
     })
 
   return () => {
-    void supabase.removeChannel(channel)
+    void client.removeChannel(channel)
   }
 }, [profile?.is_admin, session?.user?.id])
+
 
 useEffect(() => {
   if (!simuladoSessionId || simuladoResult) return
