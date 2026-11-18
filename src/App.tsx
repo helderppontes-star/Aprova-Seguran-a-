@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
-  CheckCircle2, Shield, BookOpen, Crown, LogOut, Copy, Clock3,
+  CheckCircle2, Shield, BookOpen, Crown, LogOut, Copy, Clock3, Bell,
   XCircle, RefreshCw, LockKeyhole, Smartphone, ArrowLeft
 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
@@ -39,6 +39,31 @@ function money(cents: number) {
     style: 'currency',
     currency: 'BRL'
   })
+}
+
+function playNotificationSound() {
+  try {
+    const AudioContextClass = window.AudioContext
+    if (!AudioContextClass) return
+
+    const context = new AudioContextClass()
+    const oscillator = context.createOscillator()
+    const gain = context.createGain()
+
+    oscillator.type = 'sine'
+    oscillator.frequency.value = 880
+    gain.gain.setValueAtTime(0.0001, context.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.25)
+
+    oscillator.connect(gain)
+    gain.connect(context.destination)
+    oscillator.start()
+    oscillator.stop(context.currentTime + 0.27)
+    oscillator.onended = () => { void context.close() }
+  } catch {
+    // O navegador pode bloquear o áudio automático.
+  }
 }
 
 export default function App() {
@@ -87,6 +112,33 @@ const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
     loadProfile()
   }, [session?.user?.id])
   
+useEffect(() => {
+  if (!supabase || !profile?.is_admin || !session?.user?.id) return
+
+  const channel = supabase
+    .channel('admin-premium-requests')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'premium_requests'
+      },
+      () => {
+        void loadRequests()
+        setMessage('Nova solicitação Premium recebida!')
+        playNotificationSound()
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') void loadRequests()
+    })
+
+  return () => {
+    void supabase.removeChannel(channel)
+  }
+}, [profile?.is_admin, session?.user?.id])
+
 useEffect(() => {
   if (!simuladoSessionId || simuladoResult) return
 
@@ -406,9 +458,41 @@ setAnswerResult(result as AnswerResult)
             <small>Seu futuro começa aqui</small>
           </div>
         </div>
-        <button className="icon-button" onClick={signOut} title="Sair">
-          <LogOut size={20} />
-        </button>
+    
+{profile?.is_admin && (
+  <button
+    className="icon-button"
+    onClick={() => setTab('admin')}
+    title={`${pendingCount} solicitações Premium pendentes`}
+    style={{ position: 'relative' }}
+  >
+    <Bell size={20} />
+    {pendingCount > 0 && (
+      <span style={{
+        position: 'absolute',
+        top: '-5px',
+        right: '-5px',
+        minWidth: '18px',
+        height: '18px',
+        padding: '0 4px',
+        borderRadius: '999px',
+        background: '#dc2626',
+        color: '#fff',
+        fontSize: '11px',
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '2px solid #fff'
+      }}>
+        {pendingCount > 99 ? '99+' : pendingCount}
+      </span>
+    )}
+  </button>
+)}
+<button className="icon-button" onClick={signOut} title="Sair">
+  <LogOut size={20} />
+</button>
       </header>
 
       <section className="welcome">
