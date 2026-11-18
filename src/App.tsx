@@ -371,6 +371,7 @@ if (!result || typeof result.is_correct !== 'boolean') {
 
 setAnswerResult(result as AnswerResult)
     await loadDailyUsage()
+    await loadProgress()
   }
   async function finishSimulado() {
     if (!supabase || !simuladoSessionId) return
