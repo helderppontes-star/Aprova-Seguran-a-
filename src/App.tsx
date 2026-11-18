@@ -273,6 +273,81 @@ async function loadDailyUsage() {
 
   setDailyUsed(Number(data || 0))
 }
+  async function loadProgress() {
+  if (!supabase || !session?.user?.id) return
+
+  setProgressLoading(true)
+
+  try {
+    const { data: attempts, error: attemptsError } = await supabase
+      .from('question_attempts')
+      .select('question_id, is_correct')
+      .eq('user_id', session.user.id)
+
+    if (attemptsError) throw attemptsError
+
+    const answers = attempts || []
+    const questionIds = [...new Set(answers.map(item => item.question_id))]
+
+    let questionsData: { id: string; subject: string | null }[] = []
+
+    if (questionIds.length > 0) {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('id, subject')
+        .in('id', questionIds)
+
+      if (error) throw error
+      questionsData = data || []
+    }
+
+    const subjectMap = new Map(
+      questionsData.map(question => [
+        question.id,
+        question.subject?.trim() || 'Sem disciplina'
+      ])
+    )
+
+    const correct = answers.filter(item => item.is_correct).length
+    const incorrect = answers.length - correct
+
+    setProgressAttempts({
+      total: answers.length,
+      correct,
+      incorrect,
+      percentage: answers.length
+        ? Math.round((correct / answers.length) * 100)
+        : 0
+    })
+
+    const grouped = new Map<string, { total: number; correct: number }>()
+
+    answers.forEach(item => {
+      const subject = subjectMap.get(item.question_id) || 'Sem disciplina'
+      const current = grouped.get(subject) || { total: 0, correct: 0 }
+
+      current.total++
+      if (item.is_correct) current.correct++
+
+      grouped.set(subject, current)
+    })
+
+    const results = Array.from(grouped.entries())
+      .map(([subject, values]) => ({
+        subject,
+        total: values.total,
+        correct: values.correct,
+        percentage: Math.round((values.correct / values.total) * 100)
+      }))
+      .sort((a, b) => a.percentage - b.percentage)
+
+    setSubjectProgress(results)
+  } catch (error: any) {
+    console.error('Erro ao carregar progresso:', error.message)
+  } finally {
+    setProgressLoading(false)
+  }
+}
   async function submitAnswer() {
     if (!supabase || !currentQuestion || !selectedOption || answerResult) return
     setLoading(true)
