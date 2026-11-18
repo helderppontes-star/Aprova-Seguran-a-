@@ -85,6 +85,25 @@ export default function App() {
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null)
   const [questionsLoading, setQuestionsLoading] = useState(false)
   const [dailyUsed, setDailyUsed] = useState(0)
+  const [progressLoading, setProgressLoading] = useState(false)
+  const [progressAttempts, setProgressAttempts] = useState<{
+    total: number
+    correct: number
+    incorrect: number
+    percentage: number
+  }>({
+    total: 0,
+    correct: 0,
+    incorrect: 0,
+    percentage: 0
+  })
+
+  const [subjectProgress, setSubjectProgress] = useState<{
+    subject: string
+    total: number
+    correct: number
+    percentage: number
+  }[]>([])
 const dailyLimit = 20
 const dailyRemaining = Math.max(0, dailyLimit - dailyUsed)
   const [simuladoSessionId, setSimuladoSessionId] = useState<string | null>(null)
