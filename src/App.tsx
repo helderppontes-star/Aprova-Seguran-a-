@@ -600,30 +600,35 @@ setAnswerResult(result as AnswerResult)
         <span>{session.user.email}</span>
       </section>
 
-      <nav className="tabs">
-        <button className={tab === 'home' ? 'active' : ''} onClick={() => setTab('home')}>
-          Início
-        </button>
-        <button className={tab === 'questions' ? 'active' : ''} onClick={() => setTab('questions')}>
-          Questões
-          <button
-  className={tab === 'progress' ? 'active' : ''}
-  onClick={() => {
-    setTab('progress')
-    void loadProgress()
-  }}
->
-  Meu Progresso
-</button>
-        <button className={tab === 'premium' ? 'active' : ''} onClick={() => setTab('premium')}>
-          Premium
-        </button>
-        {profile?.is_admin && (
-          <button className={tab === 'admin' ? 'active' : ''} onClick={() => setTab('admin')}>
-            Administração
-          </button>
-        )}
-      </nav>
+<nav className="tabs">
+  <button className={tab === 'home' ? 'active' : ''} onClick={() => setTab('home')}>
+    Início
+  </button>
+
+  <button className={tab === 'questions' ? 'active' : ''} onClick={() => setTab('questions')}>
+    Questões
+  </button>
+
+  <button
+    className={tab === 'progress' ? 'active' : ''}
+    onClick={() => {
+      setTab('progress')
+      void loadProgress()
+    }}
+  >
+    Meu Progresso
+  </button>
+
+  <button className={tab === 'premium' ? 'active' : ''} onClick={() => setTab('premium')}>
+    Premium
+  </button>
+
+  {profile?.is_admin && (
+    <button className={tab === 'admin' ? 'active' : ''} onClick={() => setTab('admin')}>
+      Administração
+    </button>
+  )}
+</nav>
 
       {message && <div className="notice">{message}</div>}
 
