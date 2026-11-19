@@ -901,9 +901,21 @@ setAnswerResult(result as AnswerResult)
 )}
 {tab === 'simulado' && (
   <section className="content">
-    <button className="link-button" onClick={() => setTab('home')}>
-      <ArrowLeft size={16} /> Voltar ao início
-    </button>
+  <button
+  className="link-button"
+  onClick={() => {
+    setSimuladoSessionId(null)
+    setSimuladoQuestions([])
+    setSimuladoAnswers({})
+    setSimuladoIndex(0)
+    setSimuladoResult(null)
+    setSimuladoTimeLeft(0)
+    setMessage('')
+    setTab('home')
+  }}
+>
+  <ArrowLeft size={16} /> Voltar ao início
+</button>
 
     <div className="panel">
       <h2>Simulados</h2>
