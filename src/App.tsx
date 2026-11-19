@@ -76,7 +76,7 @@ export default function App() {
   const [message, setMessage] = useState('')
   const [reference, setReference] = useState('')
   const [requests, setRequests] = useState<PremiumRequest[]>([])
-  const [tab, setTab] = useState<'home' | 'premium' | 'admin' | 'questions' | 'simulado'>('home')
+  const [tab, setTab] = useState<'home' | 'premium' | 'admin' | 'questions' | 'simulado' | 'progress'>('home')
   const [requestSent, setRequestSent] = useState(false)
 
   const [questions, setQuestions] = useState<Question[]>([])
@@ -606,7 +606,15 @@ setAnswerResult(result as AnswerResult)
         </button>
         <button className={tab === 'questions' ? 'active' : ''} onClick={() => setTab('questions')}>
           Questões
-        </button>
+          <button
+  className={tab === 'progress' ? 'active' : ''}
+  onClick={() => {
+    setTab('progress')
+    void loadProgress()
+  }}
+>
+  Meu Progresso
+</button>
         <button className={tab === 'premium' ? 'active' : ''} onClick={() => setTab('premium')}>
           Premium
         </button>
