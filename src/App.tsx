@@ -661,6 +661,96 @@ setAnswerResult(result as AnswerResult)
           </div>
         </section>
       )}
+      
+      {tab === 'progress' && (
+        <section className="content">
+          <h2>Meu Progresso</h2>
+          <p>Acompanhe seu desempenho nos estudos.</p>
+
+          {progressLoading ? (
+            <div className="panel">
+              <p>Carregando seu progresso...</p>
+            </div>
+          ) : (
+            <>
+              <div className="feature-grid">
+                <div className="panel">
+                  <h3>Respondidas</h3>
+                  <strong>{progressAttempts.total}</strong>
+                </div>
+
+                <div className="panel">
+                  <h3>Acertos</h3>
+                  <strong>{progressAttempts.correct}</strong>
+                </div>
+
+                <div className="panel">
+                  <h3>Erros</h3>
+                  <strong>{progressAttempts.incorrect}</strong>
+                </div>
+
+                <div className="panel">
+                  <h3>Aproveitamento</h3>
+                  <strong>{progressAttempts.percentage}%</strong>
+                </div>
+              </div>
+
+              <div className="panel">
+                <h3>Desempenho por disciplina</h3>
+
+                {subjectProgress.length === 0 ? (
+                  <p>Você ainda não respondeu questões. Comece pela aba Questões!</p>
+                ) : (
+                  subjectProgress.map((item) => (
+                    <div key={item.subject} style={{ marginBottom: '20px' }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '10px'
+                      }}>
+                        <strong>{item.subject}</strong>
+                        <strong>{item.percentage}%</strong>
+                      </div>
+
+                      <div style={{
+                        background: '#ddd',
+                        height: '10px',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        margin: '8px 0'
+                      }}>
+                        <div style={{
+                          width: `${item.percentage}%`,
+                          height: '100%',
+                          background: '#c99a32',
+                          borderRadius: '10px'
+                        }} />
+                      </div>
+
+                      <small>
+                        {item.correct} acertos de {item.total} questões
+                      </small>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {subjectProgress.length > 0 && (
+                <div className="panel">
+                  <h3>Disciplina que merece atenção</h3>
+                  <p>
+                    Continue praticando: <strong>{subjectProgress[0].subject}</strong>.
+                  </p>
+                  <p>
+                    Seu aproveitamento nessa disciplina é de
+                    {' '}{subjectProgress[0].percentage}%.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
 
 {tab === 'questions' && (
   <section className="content">
