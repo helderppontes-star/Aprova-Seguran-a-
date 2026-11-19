@@ -211,7 +211,17 @@ useEffect(() => {
 
     if (error) setMessage('Erro ao carregar questões: ' + error.message)
     else {
-      setQuestions((data || []) as Question[])
+      
+      const shuffledQuestions = [...((data || []) as Question[])]
+
+      for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffledQuestions[i], shuffledQuestions[j]] =
+          [shuffledQuestions[j], shuffledQuestions[i]]
+      }
+
+      setQuestions(shuffledQuestions)
+
       setQuestionIndex(0)
       setSelectedOption('')
       setAnswerResult(null)
