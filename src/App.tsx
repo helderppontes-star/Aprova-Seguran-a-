@@ -609,16 +609,6 @@ setAnswerResult(result as AnswerResult)
     Questões
   </button>
 
-  <button
-    className={tab === 'progress' ? 'active' : ''}
-    onClick={() => {
-      setTab('progress')
-      void loadProgress()
-    }}
-  >
-    Meu Progresso
-  </button>
-
   <button className={tab === 'premium' ? 'active' : ''} onClick={() => setTab('premium')}>
     Premium
   </button>
