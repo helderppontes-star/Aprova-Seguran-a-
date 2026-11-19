@@ -635,23 +635,32 @@ setAnswerResult(result as AnswerResult)
       {tab === 'home' && (
         <section className="content">
           <h2>Área de estudos</h2>
+          
           <div className="feature-grid">
             <button className="feature" onClick={() => setTab('questions')}>
               <BookOpen size={30} />
               <strong>Banco de questões</strong>
               <span>Resolva questões e confira sua correção.</span>
             </button>
+
             <button className="feature" onClick={() => setTab('simulado')}>
               <CheckCircle2 size={30} />
               <strong>Simulados</strong>
               <span>Treine para sua prova.</span>
             </button>
+
+            <button className="feature" onClick={() => setTab('progress')}>
+              <strong>📊 Meu Progresso</strong>
+              <span>Acompanhe seus acertos e desempenho.</span>
+            </button>
+
             <button className="feature" onClick={() => setTab('premium')}>
               <Crown size={30} />
               <strong>Plano Premium</strong>
               <span>Conheça os recursos Premium.</span>
             </button>
           </div>
+
           <div className="panel">
             <h3>Seu acesso</h3>
             <p>{isPremium ? 'Premium ativo' : 'Plano gratuito'}</p>
