@@ -444,23 +444,58 @@ setAnswerResult(result as AnswerResult)
     else setMessage('Acesso realizado.')
   }
 
-  async function requestPremium() {
-    if (!supabase || !session?.user) return
-    setLoading(true)
-    setMessage('')
-    const { error } = await supabase.from('premium_requests').insert({
-      user_id: session.user.id,
-      email: session.user.email,
-      amount_cents: Math.round(amount * 100),
-      transaction_reference: reference.trim() || null
-    })
-    setLoading(false)
-    if (error) setMessage('Não foi possível enviar a solicitação: ' + error.message)
-    else {
-      setRequestSent(true)
-      setMessage('Solicitação enviada. Aguarde a conferência e liberação do administrador.')
+  
+async function requestPremium() {
+  if (!supabase || !session?.user) return
+
+  setLoading(true)
+  setMessage('')
+
+  try {
+    // Verifica se o usuário já possui solicitação pendente
+    const { data: existing, error: checkError } = await supabase
+      .from('premium_requests')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle()
+
+    if (checkError) {
+      setMessage('Não foi possível verificar sua solicitação: ' + checkError.message)
+      return
     }
+
+    if (existing) {
+      setRequestSent(true)
+      setMessage('Você já possui uma solicitação Premium pendente. Não é necessário enviar outra.')
+      return
+    }
+
+    // Registra a solicitação vinculada à conta cadastrada
+    const { error } = await supabase
+      .from('premium_requests')
+      .insert({
+        user_id: session.user.id,
+        email: session.user.email,
+        amount_cents: Math.round(amount * 100),
+        transaction_reference: reference.trim() || null
+      })
+
+    if (error) {
+      setMessage('Não foi possível enviar a solicitação: ' + error.message)
+      return
+    }
+
+    setRequestSent(true)
+    setMessage('Solicitação registrada com sucesso! Agora você pode realizar o pagamento. Aguarde a conferência do administrador.')
+  } catch {
+    setMessage('Ocorreu um erro. Tente novamente.')
+  } finally {
+    setLoading(false)
   }
+}
+
 
   async function reviewRequest(id: string, approve: boolean) {
     if (!supabase) return
