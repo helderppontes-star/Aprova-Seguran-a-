@@ -37,6 +37,40 @@ export default function App() {
     loadProfile()
   }, [session?.user?.id])
 
+useEffect(() => {
+  let cancelled = false
+
+  async function loadPendingRequest() {
+    if (!supabase || !session?.user) {
+      setRequestSent(false)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('premium_requests')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle()
+
+    if (cancelled) return
+
+    if (error) {
+      setMessage('Não foi possível verificar sua solicitação: ' + error.message)
+      return
+    }
+
+    setRequestSent(!!data)
+  }
+
+  loadPendingRequest()
+
+  return () => {
+    cancelled = true
+  }
+}, [session?.user?.id])
+
   async function loadProfile() {
     if (!supabase || !session?.user) return
     const { data, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
