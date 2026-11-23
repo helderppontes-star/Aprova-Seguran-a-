@@ -228,3 +228,28 @@ button,input{font:inherit}button{cursor:pointer;border:0}button:disabled{opacity
   border: 1px solid #e6c36a;
   font-weight: bold;
 }
+
+/* Escudo oficial AS */
+.brand-mark {
+  width: 76px;
+  height: 76px;
+  background: #071b35;
+  border: 2px solid #d7ae4d;
+  border-radius: 20px;
+  box-shadow: 0 0 18px #d7ae4d35;
+}
+
+.brand-mark svg {
+  width: 54px;
+  height: 54px;
+  color: #e4bd63;
+  stroke: #e4bd63;
+}
+
+.brand-mark b {
+  bottom: 18px;
+  color: #e4bd63;
+  font-size: 14px;
+  font-weight: 900;
+  text-shadow: 0 1px 3px #071b35;
+}
