@@ -1084,47 +1084,85 @@ async function requestPremium() {
     </div>
   </section>
 )} 
-      {tab === 'premium' && (
-        <section className="content">
-          <div className="panel">
-            <h2>Desbloqueie o Premium</h2>
-            <div className="price">
-              <strong>{money(Math.round(amount * 100))}</strong>
-              <span> / 30 dias</span>
-            </div>
-            <p>Faça o PIX e solicite a liberação. O acesso será ativado após a conferência do pagamento.</p>
+    
+{tab === 'premium' && (
+  <section className="content">
+    <div className="panel">
+      <h2>⭐ Seja Premium!</h2>
 
-            {isPremium ? (
-              <p>Seu Premium está ativo até {new Date(profile!.premium_until!).toLocaleDateString('pt-BR')}.</p>
-            ) : (
-              <>
-                {pixPayload ? (
-                  <div className="pix-box">
-                    <h3>Pagamento via PIX</h3>
-                    <QRCodeCanvas value={pixPayload} size={210} level="M" includeMargin />
-                    <button className="secondary" onClick={() => navigator.clipboard.writeText(pixPayload)}>
-                      <Copy size={16} /> Copiar PIX copia e cola
-                    </button>
-                    {pixKey && <p>Chave PIX: <strong>{pixKey}</strong></p>}
-                    {pixHolder && <p>Titular: {pixHolder}</p>}
-                  </div>
-                ) : (
-                  <p className="notice">O PIX ainda precisa ser configurado.</p>
-                )}
+      <div className="price">
+        <strong>{money(Math.round(amount * 100))}</strong>
+        <span> / 30 dias</span>
+      </div>
 
-                <label>
-                  Identificador da transação (opcional)
-                  <input value={reference} onChange={e => setReference(e.target.value)} placeholder="Código da transação" />
-                </label>
-                <p className="small">A solicitação não confirma o pagamento. O administrador fará a conferência.</p>
-                <button className="primary" onClick={requestPremium} disabled={loading || requestSent}>
-                  {loading ? 'Enviando...' : requestSent ? 'Solicitação enviada' : 'Já paguei — solicitar liberação'}
-                </button>
-              </>
-            )}
-          </div>
-        </section>
+      <h3>Suas vantagens:</h3>
+      <ul>
+        <li><strong>Questões ilimitadas:</strong> estude sem limite diário.</li>
+        <li><strong>Simulados personalizados:</strong> escolha 20, 40 ou 60 questões.</li>
+        <li><strong>Mais tempo para testar seus conhecimentos:</strong> 3 minutos por questão.</li>
+        <li><strong>Histórico de desempenho:</strong> acompanhe seus resultados nos simulados.</li>
+      </ul>
+
+      <p>Prepare-se melhor e aumente suas chances de aprovação!</p>
+
+      {isPremium ? (
+        <p>
+          Seu Premium está ativo até{' '}
+          {new Date(profile!.premium_until!).toLocaleDateString('pt-BR')}.
+        </p>
+      ) : (
+        <>
+          {requestSent ? (
+            <>
+              <p className="notice">
+                Sua solicitação foi registrada! Faça o pagamento pelo PIX abaixo.
+                A liberação ocorrerá após a conferência do pagamento.
+              </p>
+
+              {pixPayload ? (
+                <div className="pix-box">
+                  <h3>Pagamento via PIX</h3>
+                  <QRCodeCanvas
+                    value={pixPayload}
+                    size={210}
+                    level="M"
+                    includeMargin
+                  />
+                  <button
+                    className="secondary"
+                    onClick={() => navigator.clipboard.writeText(pixPayload)}
+                  >
+                    <Copy size={16} /> Copiar PIX copia e cola
+                  </button>
+                  {pixKey && <p>Chave PIX: <strong>{pixKey}</strong></p>}
+                  {pixHolder && <p>Titular: {pixHolder}</p>}
+                </div>
+              ) : (
+                <p className="notice">O PIX ainda precisa ser configurado.</p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="small">
+                Solicite o Premium para registrar seu pedido e liberar os dados
+                de pagamento.
+              </p>
+              <button
+                className="primary"
+                onClick={requestPremium}
+                disabled={loading}
+              >
+                {loading
+                  ? 'Enviando...'
+                  : 'Solicitar Premium e liberar PIX'}
+              </button>
+            </>
+          )}
+        </>
       )}
+    </div>
+  </section>
+)}
 
       {tab === 'admin' && profile?.is_admin && (
         <section className="content">
