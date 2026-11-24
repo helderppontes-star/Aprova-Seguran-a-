@@ -595,8 +595,7 @@ async function requestPremium() {
   return (
     <main className="app">
       <header className="topbar">
-        
-<div className="brand">
+        <div className="brand">
   <div className="brand-mark">
     <Shield size={42} strokeWidth={1.8} />
     <b>AS</b>
@@ -606,7 +605,7 @@ async function requestPremium() {
     <small>Seu futuro começa aqui</small>
   </div>
 </div>
-
+        
 <div className="brand">
   <div className="brand-mark">
     <Shield size={42} strokeWidth={1.8} />
