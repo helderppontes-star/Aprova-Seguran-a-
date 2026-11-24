@@ -606,18 +606,7 @@ async function requestPremium() {
   </div>
 </div>
         
-<div className="brand">
-  <div className="brand-mark">
-    <Shield size={42} strokeWidth={1.8} />
-    <b>AS</b>
-  </div>
-  <div>
-    <strong>Aprova Segurança</strong>
-    <small>Seu futuro começa aqui</small>
-  </div>
-</div>
-
-    
+   
 {profile?.is_admin && (
   <button
     className="icon-button"
