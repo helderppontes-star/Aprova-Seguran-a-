@@ -37,3 +37,4 @@ export default defineConfig({
     })
   ]
 })
+  base: '/Aprova-Seguran-a-/',
