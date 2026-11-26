@@ -200,34 +200,54 @@ useEffect(() => {
     else setRequests((data || []) as PremiumRequest[])
   }
 
+  
   async function loadQuestions() {
     if (!supabase) return
+
     setQuestionsLoading(true)
     setMessage('')
-    const { data, error } = await supabase
-      .from('questions').select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
 
-    if (error) setMessage('Erro ao carregar questões: ' + error.message)
-    else {
-      
-      const shuffledQuestions = [...((data || []) as Question[])]
+    const pageSize = 1000
+    let from = 0
+    let allQuestions: Question[] = []
 
-      for (let i = shuffledQuestions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffledQuestions[i], shuffledQuestions[j]] =
-          [shuffledQuestions[j], shuffledQuestions[i]]
+    while (true) {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1)
+
+      if (error) {
+        setMessage('Erro ao carregar questões: ' + error.message)
+        setQuestionsLoading(false)
+        return
       }
 
-      setQuestions(shuffledQuestions)
+      const page = (data || []) as Question[]
+      allQuestions = [...allQuestions, ...page]
 
-      setQuestionIndex(0)
-      setSelectedOption('')
-      setAnswerResult(null)
+      if (page.length < pageSize) break
+
+      from += pageSize
     }
+
+    const shuffledQuestions = [...allQuestions]
+
+    for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffledQuestions[i], shuffledQuestions[j]] =
+        [shuffledQuestions[j], shuffledQuestions[i]]
+    }
+
+    setQuestions(shuffledQuestions)
+    setQuestionIndex(0)
+    setSelectedOption('')
+    setAnswerResult(null)
     setQuestionsLoading(false)
   }
+
     
 async function startSimulado() {
   if (!supabase) return
